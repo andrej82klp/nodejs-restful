@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { Item } = require('./models');
 
 const app = express();
 const port = 3000;
@@ -8,35 +9,53 @@ const port = 3000;
 app.use(bodyParser.json());
 app.use(cors());
 
-app.get('/', (req, res) => {
-  res.send('Hello, World!');
+app.get('/items', async (req, res) => {
+  try {
+    const items = await Item.findAll();
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch items' });
+  }
+});
+
+app.post('/items', async (req, res) => {
+  try {
+    const newItem = await Item.create(req.body);
+    res.status(201).json(newItem);
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to create item' });
+  }
+});
+
+app.put('/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedItem = await Item.update(req.body, { where: { id } });
+    if (updatedItem[0]) {
+      const item = await Item.findByPk(id);
+      res.json(item);
+    } else {
+      res.status(404).json({ error: 'Item not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ error: 'Failed to update item' });
+  }
+});
+
+app.delete('/items/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Item.destroy({ where: { id } });
+    if (deleted) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: 'Item not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete item' });
+  }
 });
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-});
-
-let items = [];
-
-app.get('/items', (req, res) => {
-  res.json(items);
-});
-
-app.post('/items', (req, res) => {
-  const newItem = req.body;
-  items.push(newItem);
-  res.status(201).json(newItem);
-});
-
-app.put('/items/:id', (req, res) => {
-  const { id } = req.params;
-  const updatedItem = req.body;
-  items = items.map(item => item.id === id ? updatedItem : item);
-  res.json(updatedItem);
-});
-
-app.delete('/items/:id', (req, res) => {
-  const { id } = req.params;
-  items = items.filter(item => item.id !== id);
-  res.status(204).send();
 });
