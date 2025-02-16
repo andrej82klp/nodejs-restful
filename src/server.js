@@ -1,8 +1,8 @@
+const request = require('supertest');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { Item } = require('./models');
-
 const app = express();
 const port = 3000;
 
